@@ -1,0 +1,108 @@
+/* RESET */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* ROOT */
+#root {
+  width: 100%;
+}
+
+/* LAYOUT */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: #1e293b;
+  color: white;
+  padding: 20px;
+  width: 220px;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+}
+
+/* MENU */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar ul li {
+  margin-bottom: 12px;
+}
+
+.sidebar ul li a {
+  color: white;
+  text-decoration: none;
+}
+
+/* ACTIVE MENU */
+.sidebar ul li.active a {
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+/* CONTENT */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background: #f1f5f9;
+}
+
+/* =========================
+   MOBILE MODE (ANDROID)
+========================= */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .sidebar ul {
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .sidebar ul li {
+    margin-bottom: 0;
+  }
+}
+
+/* ====== BOTTOM NAV ANDROID STYLE ====== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #1e293b;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  z-index: 1000;
+}
+
+.bottom-nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.bottom-nav a.active {
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+/* kasih ruang biar content ga ketutup */
+.main-content {
+  padding-bottom: 70px;
+}
