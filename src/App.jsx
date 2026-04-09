@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Sidebar from "./components/Sidebar";
-import Barang from "./pages/barang";
+import Barang from "./pages/Barang";
 
 export default function App() {
   const [page, setPage] = useState("dashboard");
