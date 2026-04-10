@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 function Barang() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const [form, setForm] = useState({
     id: null,
@@ -14,12 +15,10 @@ function Barang() {
     hargajual: 0,
   });
 
-  // 🔢 FORMAT RUPIAH (HANYA TAMPILAN)
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat("id-ID").format(angka || 0);
   };
 
-  // 🔄 LOAD DATA
   const loadData = async () => {
     const { data, error } = await supabase
       .from("Barang")
@@ -33,12 +32,10 @@ function Barang() {
     loadData();
   }, []);
 
-  // 🔍 FILTER
   const filtered = data.filter((item) =>
     item.nama.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ✍️ INPUT
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -48,7 +45,6 @@ function Barang() {
     });
   };
 
-  // 💾 SIMPAN
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -57,13 +53,7 @@ function Barang() {
       return;
     }
 
-    const payload = {
-      barcode: form.barcode,
-      nama: form.nama,
-      satuan: form.satuan,
-      hargabeli: Number(form.hargabeli),
-      hargajual: Number(form.hargajual),
-    };
+    const payload = { ...form };
 
     let error;
 
@@ -85,24 +75,27 @@ function Barang() {
     }
 
     resetForm();
+    setShowForm(false);
     loadData();
   };
 
-  // ✏️ EDIT
   const handleEdit = (item) => {
     setForm(item);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowForm(true);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   };
 
-  // 🗑️ DELETE
-  const handleDelete = async (id) => {
-    const konfirmasi = confirm("Hapus data ini?");
+  const handleDelete = async (item) => {
+    const konfirmasi = confirm(
+      `Yakin ingin menghapus:\n\n${item.nama} ?`
+    );
+
     if (!konfirmasi) return;
 
     const { error } = await supabase
       .from("Barang")
       .delete()
-      .eq("id", id);
+      .eq("id", item.id);
 
     if (!error) loadData();
   };
@@ -119,76 +112,31 @@ function Barang() {
   };
 
   return (
-    <div className="space-y-4 max-w-xl mx-auto">
+    <div className="space-y-4 max-w-xl mx-auto pb-40">
+
       <h2 className="text-xl font-bold">📦 Data Barang</h2>
 
       {/* 🔍 SEARCH */}
       <input
         placeholder="Cari barang..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setShowForm(false); // auto hide form
+        }}
         className="w-full border p-3 rounded-xl text-lg shadow-sm"
       />
 
-      {/* 📦 FORM */}
-      <form onSubmit={handleSubmit} className="space-y-2 bg-white p-4 rounded-xl shadow">
-        <input
-          name="barcode"
-          placeholder="Scan / input barcode"
-          value={form.barcode}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg text-lg"
-          autoFocus
-        />
-
-        <input
-          name="nama"
-          placeholder="Nama Barang"
-          value={form.nama}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg text-lg"
-        />
-
-        <input
-          name="satuan"
-          placeholder="Satuan"
-          value={form.satuan}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg text-lg"
-        />
-
-        <input
-          name="hargabeli"
-          type="number"
-          placeholder="Harga Beli"
-          value={form.hargabeli}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg text-lg"
-        />
-
-        <input
-          name="hargajual"
-          type="number"
-          placeholder="Harga Jual"
-          value={form.hargajual}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg text-lg"
-        />
-
-        <div className="flex gap-2 pt-2">
-          <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-lg shadow">
-            💾 Simpan
-          </button>
-
-          <button
-            type="button"
-            onClick={resetForm}
-            className="flex-1 bg-gray-400 text-white py-3 rounded-xl text-lg"
-          >
-            Reset
-          </button>
-        </div>
-      </form>
+      {/* ➕ TOMBOL TAMBAH */}
+      <button
+        onClick={() => {
+          resetForm();
+          setShowForm(true);
+        }}
+        className="w-full bg-green-600 text-white py-3 rounded-xl text-lg"
+      >
+        ➕ Tambah Barang
+      </button>
 
       {/* 📱 LIST */}
       <div className="space-y-3">
@@ -197,32 +145,21 @@ function Barang() {
             key={item.id}
             className="bg-white p-4 rounded-xl shadow flex flex-col gap-2"
           >
-            {/* NAMA */}
             <div className="text-lg font-semibold">{item.nama}</div>
 
-            {/* INFO */}
             <div className="text-sm text-gray-500">
-              {item.satuan} • Barcode: {item.barcode}
+              {item.satuan} • {item.barcode}
             </div>
 
-            {/* HARGA */}
             <div className="flex justify-between text-sm">
               <div>
-                <span className="text-gray-500">Beli</span><br />
-                <span className="font-medium">
-                  Rp {formatRupiah(item.hargabeli)}
-                </span>
+                Rp {formatRupiah(item.hargabeli)}
               </div>
-
-              <div className="text-right">
-                <span className="text-gray-500">Jual</span><br />
-                <span className="font-bold text-green-600">
-                  Rp {formatRupiah(item.hargajual)}
-                </span>
+              <div className="text-green-600 font-bold">
+                Rp {formatRupiah(item.hargajual)}
               </div>
             </div>
 
-            {/* AKSI */}
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => handleEdit(item)}
@@ -232,7 +169,7 @@ function Barang() {
               </button>
 
               <button
-                onClick={() => handleDelete(item.id)}
+                onClick={() => handleDelete(item)}
                 className="flex-1 bg-red-600 text-white py-2 rounded-lg"
               >
                 🗑️ Hapus
@@ -241,6 +178,71 @@ function Barang() {
           </div>
         ))}
       </div>
+
+      {/* 🧾 FORM (FOOTER) */}
+      {showForm && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-2xl border-t">
+          <form onSubmit={handleSubmit} className="space-y-2">
+
+            <input
+              name="barcode"
+              placeholder="Barcode"
+              value={form.barcode}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg"
+              autoFocus
+            />
+
+            <input
+              name="nama"
+              placeholder="Nama Barang"
+              value={form.nama}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg"
+            />
+
+            <input
+              name="satuan"
+              placeholder="Satuan"
+              value={form.satuan}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg"
+            />
+
+            <input
+              name="hargabeli"
+              type="number"
+              placeholder="Harga Beli"
+              value={form.hargabeli}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg"
+            />
+
+            <input
+              name="hargajual"
+              type="number"
+              placeholder="Harga Jual"
+              value={form.hargajual}
+              onChange={handleChange}
+              className="w-full border p-3 rounded-lg"
+            />
+
+            <div className="flex gap-2">
+              <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
+                💾 Simpan
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="flex-1 bg-gray-400 text-white py-3 rounded-xl"
+              >
+                Tutup
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
