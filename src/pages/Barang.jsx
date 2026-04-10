@@ -37,7 +37,7 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
   );
 
   // =========================
-  // CART
+  // CART (FIXED LOGIC)
   // =========================
   const handleAddToCart = (item) => {
     const existing = cart.find((i) => i.id === item.id);
@@ -46,7 +46,7 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
       setCart(
         cart.map((i) =>
           i.id === item.id
-            ? { ...i, qty: (i.qty || 1) + 1 }
+            ? { ...i, qty: i.qty + 1 }
             : i
         )
       );
@@ -55,15 +55,12 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
     }
   };
 
-  const totalQty = cart.reduce(
-    (sum, item) => sum + (item.qty || 1),
-    0
-  );
+  const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const totalHarga = cart.reduce(
     (sum, item) =>
       sum +
-      (item.qty || 1) *
+      item.qty *
         (mode === "jual" ? item.hargajual : item.hargabeli),
     0
   );
@@ -150,9 +147,9 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
   // UI
   // =========================
   return (
-    <div className="space-y-4 max-w-xl mx-auto pb-32">
+    <div className="space-y-4 max-w-xl mx-auto pb-32 px-3">
 
-      <h2 className="text-xl font-bold">📦 Data Barang</h2>
+      <h2 className="text-xl font-bold text-gray-800">📦 Data Barang</h2>
 
       {/* SEARCH */}
       <input
@@ -162,7 +159,7 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
           setSearch(e.target.value);
           setShowForm(false);
         }}
-        className="w-full border p-3 rounded-xl text-lg shadow-sm"
+        className="w-full border p-3 rounded-xl text-lg shadow-sm focus:ring-2 focus:ring-green-500 outline-none"
       />
 
       {/* TAMBAH */}
@@ -171,7 +168,7 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
           resetForm();
           setShowForm(true);
         }}
-        className="w-full bg-green-600 text-white py-3 rounded-xl text-lg"
+        className="w-full bg-green-600 hover:bg-green-700 transition text-white py-3 rounded-xl text-lg shadow"
       >
         ➕ Tambah Barang
       </button>
@@ -180,9 +177,9 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
       <div className="flex gap-2">
         <button
           onClick={() => setMode("jual")}
-          className={`flex-1 py-2 rounded ${
+          className={`flex-1 py-2 rounded-lg font-semibold transition ${
             mode === "jual"
-              ? "bg-green-600 text-white"
+              ? "bg-green-600 text-white shadow"
               : "bg-gray-200"
           }`}
         >
@@ -191,9 +188,9 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
 
         <button
           onClick={() => setMode("beli")}
-          className={`flex-1 py-2 rounded ${
+          className={`flex-1 py-2 rounded-lg font-semibold transition ${
             mode === "beli"
-              ? "bg-blue-600 text-white"
+              ? "bg-blue-600 text-white shadow"
               : "bg-gray-200"
           }`}
         >
@@ -203,97 +200,120 @@ function Barang({ cart, setCart, mode, setMode, setPage }) {
 
       {/* LIST */}
       <div className="space-y-3">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => handleAddToCart(item)}
-            className="bg-white p-4 rounded-xl shadow flex flex-col gap-2 cursor-pointer active:scale-95"
-          >
-            <div className="font-semibold">{item.nama}</div>
+        {filtered.map((item) => {
+          const inCart = cart.find((i) => i.id === item.id);
 
-            <div className="text-sm text-gray-500">
-              {item.satuan} • {item.barcode}
-            </div>
+          return (
+            <div
+              key={item.id}
+              onClick={() => handleAddToCart(item)}
+              className="bg-white p-4 rounded-xl shadow hover:shadow-md transition active:scale-95 cursor-pointer flex flex-col gap-2 border"
+            >
+              <div className="flex justify-between items-start">
+                <div className="font-semibold text-gray-800">
+                  {item.nama}
+                </div>
 
-            <div className="flex justify-between text-sm">
-              <div>Rp {formatRupiah(item.hargabeli)}</div>
-              <div className="text-green-600 font-bold">
-                Rp {formatRupiah(item.hargajual)}
+                {inCart && (
+                  <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    ✔ {inCart.qty}
+                  </div>
+                )}
+              </div>
+
+              <div className="text-sm text-gray-500">
+                {item.satuan} • {item.barcode}
+              </div>
+
+              <div className="flex justify-between text-sm mt-1">
+                <div className="text-gray-500">
+                  Rp {formatRupiah(item.hargabeli)}
+                </div>
+                <div className="text-green-600 font-bold">
+                  Rp {formatRupiah(item.hargajual)}
+                </div>
+              </div>
+
+              {/* AKSI */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(item);
+                  }}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg text-sm"
+                >
+                  ✏️ Edit
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm"
+                >
+                  🗑️ Hapus
+                </button>
               </div>
             </div>
-
-            {/* AKSI */}
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(item);
-                }}
-                className="flex-1 bg-yellow-500 text-white py-2 rounded-lg"
-              >
-                ✏️ Edit
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(item);
-                }}
-                className="flex-1 bg-red-600 text-white py-2 rounded-lg"
-              >
-                🗑️ Hapus
-              </button>
-            </div>
-
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* FORM */}
+      {/* FORM MODAL */}
       {showForm && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-2xl border-t">
-          <form onSubmit={handleSubmit} className="space-y-2">
-            <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="Barcode" className="w-full border p-3 rounded-lg" />
-            <input name="nama" value={form.nama} onChange={handleChange} placeholder="Nama Barang" className="w-full border p-3 rounded-lg" />
-            <input name="satuan" value={form.satuan} onChange={handleChange} placeholder="Satuan" className="w-full border p-3 rounded-lg" />
-            <input name="hargabeli" type="number" value={form.hargabeli} onChange={handleChange} placeholder="Harga Beli" className="w-full border p-3 rounded-lg" />
-            <input name="hargajual" type="number" value={form.hargajual} onChange={handleChange} placeholder="Harga Jual" className="w-full border p-3 rounded-lg" />
+        <>
+          <div
+            className="fixed inset-0 bg-black/30"
+            onClick={() => setShowForm(false)}
+          ></div>
 
-            <div className="flex gap-2">
-              <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
-                💾 Simpan
-              </button>
+          <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-2xl border-t rounded-t-2xl space-y-2">
+            <form onSubmit={handleSubmit} className="space-y-2">
+              <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="Barcode" className="w-full border p-3 rounded-lg" />
+              <input name="nama" value={form.nama} onChange={handleChange} placeholder="Nama Barang" className="w-full border p-3 rounded-lg" />
+              <input name="satuan" value={form.satuan} onChange={handleChange} placeholder="Satuan" className="w-full border p-3 rounded-lg" />
+              <input name="hargabeli" type="number" value={form.hargabeli} onChange={handleChange} placeholder="Harga Beli" className="w-full border p-3 rounded-lg" />
+              <input name="hargajual" type="number" value={form.hargajual} onChange={handleChange} placeholder="Harga Jual" className="w-full border p-3 rounded-lg" />
 
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="flex-1 bg-gray-400 text-white py-3 rounded-xl"
-              >
-                Tutup
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="flex gap-2 pt-2">
+                <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl">
+                  💾 Simpan
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-3 rounded-xl"
+                >
+                  Tutup
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
       )}
 
       {/* BOTTOM CART */}
       {totalQty > 0 && (
         <div
           onClick={() => setPage("transaksi")}
-          className={`fixed bottom-0 left-0 right-0 p-4 flex justify-between items-center shadow-xl cursor-pointer
+          className={`fixed bottom-0 left-0 right-0 p-4 flex justify-between items-center shadow-xl cursor-pointer transition
             ${mode === "jual" ? "bg-green-600" : "bg-blue-600"} text-white`}
         >
           <div>
             🛒 {totalQty} item
-            <div className="text-xs">Mode: {mode.toUpperCase()}</div>
+            <div className="text-xs opacity-80">
+              Mode: {mode.toUpperCase()}
+            </div>
           </div>
 
-          <div className="font-bold">
+          <div className="font-bold text-lg">
             Rp {formatRupiah(totalHarga)}
           </div>
         </div>
       )}
-
     </div>
   );
 }

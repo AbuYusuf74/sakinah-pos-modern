@@ -19,26 +19,52 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
         .eq("id", 1)
         .single();
 
-      if (!error) {
-        setToko(data);
-      }
+      if (!error) setToko(data);
     };
 
     fetchToko();
   }, []);
 
+  const formatRupiah = (angka) =>
+    new Intl.NumberFormat("id-ID").format(angka || 0);
+
   const total = cart.reduce(
     (sum, item) =>
-      sum + (item.qty || 1) * (mode === "jual" ? item.hargajual : item.hargabeli),
+      sum +
+      item.qty *
+        (mode === "jual" ? item.hargajual : item.hargabeli),
     0
   );
 
   const kembalian = bayar - total;
 
+  // =========================
+  // QTY CONTROL (SAFE)
+  // =========================
   const updateQty = (id, qty) => {
+    if (qty < 1) return;
+
     setCart(
       cart.map((item) =>
         item.id === id ? { ...item, qty } : item
+      )
+    );
+  };
+
+  const tambahQty = (id) => {
+    setCart(
+      cart.map((item) =>
+        item.id === id ? { ...item, qty: item.qty + 1 } : item
+      )
+    );
+  };
+
+  const kurangQty = (id) => {
+    setCart(
+      cart.map((item) =>
+        item.id === id && item.qty > 1
+          ? { ...item, qty: item.qty - 1 }
+          : item
       )
     );
   };
@@ -50,60 +76,90 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
   return (
     <div className="max-w-xl mx-auto">
 
-      {/* 🔥 TOP BAR STICKY */}
+      {/* TOP BAR */}
       <div className="sticky top-0 z-50 bg-white shadow-md border-b p-3 flex justify-between items-center">
-        <h2 className="text-lg font-bold">
+        <h2 className="text-lg font-bold text-gray-800">
           🧾 Transaksi {mode.toUpperCase()}
         </h2>
 
         <button
           onClick={() => setShowPengaturan(true)}
-          className="text-sm bg-gray-200 px-3 py-1 rounded"
+          className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-lg transition"
         >
           ⚙️
         </button>
       </div>
 
-      {/* 🔥 CONTENT */}
-      <div className="p-4 space-y-4 pb-40">
+      {/* CONTENT */}
+      <div className="p-4 space-y-4 pb-44">
 
         {/* LIST ITEM */}
-        {cart.map((item) => (
-          <div key={item.id} className="bg-white p-3 rounded-xl shadow flex justify-between items-center">
+        {cart.length === 0 && (
+          <div className="text-center text-gray-400 mt-10">
+            Keranjang kosong
+          </div>
+        )}
 
+        {cart.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white p-3 rounded-xl shadow flex justify-between items-center"
+          >
             <div>
-              <div className="font-semibold">{item.nama}</div>
+              <div className="font-semibold text-gray-800">
+                {item.nama}
+              </div>
+
               <div className="text-sm text-gray-500">
-                Rp {(mode === "jual" ? item.hargajual : item.hargabeli)}
+                Rp{" "}
+                {formatRupiah(
+                  mode === "jual"
+                    ? item.hargajual
+                    : item.hargabeli
+                )}
+              </div>
+
+              <div className="text-xs text-gray-400">
+                Subtotal: Rp{" "}
+                {formatRupiah(
+                  item.qty *
+                    (mode === "jual"
+                      ? item.hargajual
+                      : item.hargabeli)
+                )}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
 
               <button
-                onClick={() => updateQty(item.id, (item.qty || 1) - 1)}
-                className="px-2 bg-gray-300 rounded"
-              >-</button>
+                onClick={() => kurangQty(item.id)}
+                className="px-3 py-1 bg-gray-200 rounded-lg text-lg"
+              >
+                -
+              </button>
 
               <input
                 type="number"
-                value={item.qty || 1}
+                value={item.qty}
                 onChange={(e) => {
                   let val = parseInt(e.target.value);
                   if (isNaN(val) || val < 1) val = 1;
                   updateQty(item.id, val);
                 }}
-                className="w-14 text-center border rounded"
+                className="w-14 text-center border rounded-lg"
               />
 
               <button
-                onClick={() => updateQty(item.id, (item.qty || 1) + 1)}
-                className="px-2 bg-gray-300 rounded"
-              >+</button>
+                onClick={() => tambahQty(item.id)}
+                className="px-3 py-1 bg-gray-200 rounded-lg text-lg"
+              >
+                +
+              </button>
 
               <button
                 onClick={() => hapusItem(item.id)}
-                className="ml-2 text-red-600"
+                className="ml-2 text-red-600 text-lg"
               >
                 ✕
               </button>
@@ -113,22 +169,24 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
         ))}
 
         {/* TOTAL */}
-        <div className="text-lg font-bold">
-          Total: Rp {new Intl.NumberFormat("id-ID").format(total)}
+        <div className="bg-white p-4 rounded-xl shadow text-lg font-bold flex justify-between">
+          <span>Total</span>
+          <span>Rp {formatRupiah(total)}</span>
         </div>
 
-        {/* INPUT BAYAR */}
+        {/* BAYAR */}
         <input
           type="number"
           placeholder="Jumlah Bayar"
           value={bayar}
           onChange={(e) => setBayar(Number(e.target.value))}
-          className="w-full border p-3 rounded-lg"
+          className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
         />
 
         {/* KEMBALIAN */}
-        <div className="text-lg">
-          Kembalian: Rp {new Intl.NumberFormat("id-ID").format(kembalian > 0 ? kembalian : 0)}
+        <div className="text-lg font-semibold text-green-600">
+          Kembalian: Rp{" "}
+          {formatRupiah(kembalian > 0 ? kembalian : 0)}
         </div>
 
         {/* AKSI */}
@@ -136,7 +194,7 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
 
           <button
             onClick={onBack}
-            className="flex-1 bg-gray-400 text-white py-3 rounded-xl"
+            className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-3 rounded-xl"
           >
             Kembali
           </button>
@@ -144,6 +202,11 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
           <button
             onClick={async () => {
               try {
+                if (cart.length === 0) {
+                  alert("Keranjang kosong");
+                  return;
+                }
+
                 if (bayar < total) {
                   alert("❌ Uang kurang!");
                   return;
@@ -153,10 +216,10 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
                   .from("transaksi")
                   .insert([
                     {
-                      total: total,
-                      bayar: bayar,
+                      total,
+                      bayar,
                       kembalian: kembalian > 0 ? kembalian : 0,
-                      mode: mode,
+                      mode,
                     },
                   ])
                   .select()
@@ -168,11 +231,16 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
                   transaksi_id: trx.id,
                   barang_id: item.id,
                   nama_barang: item.nama,
-                  harga: mode === "jual" ? item.hargajual : item.hargabeli,
-                  qty: item.qty || 1,
+                  harga:
+                    mode === "jual"
+                      ? item.hargajual
+                      : item.hargabeli,
+                  qty: item.qty,
                   subtotal:
-                    (item.qty || 1) *
-                    (mode === "jual" ? item.hargajual : item.hargabeli),
+                    item.qty *
+                    (mode === "jual"
+                      ? item.hargajual
+                      : item.hargabeli),
                 }));
 
                 const { error: detailError } = await supabase
@@ -187,7 +255,6 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
                 });
 
                 setLastItems(details);
-
                 setShowStruk(true);
 
               } catch (err) {
@@ -195,7 +262,7 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
                 alert("❌ Gagal simpan transaksi");
               }
             }}
-            className="flex-1 bg-green-600 text-white py-3 rounded-xl"
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl"
           >
             Simpan
           </button>
@@ -216,6 +283,20 @@ function Transaksi({ cart, setCart, mode, onBack, onSelesai, setPage }) {
             onBack();
           }}
         />
+      )}
+
+      {/* 🔥 PENGATURAN (FIX) */}
+      {showPengaturan && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 z-50"
+            onClick={() => setShowPengaturan(false)}
+          ></div>
+
+          <div className="fixed bottom-0 left-0 right-0 z-50">
+            <Pengaturan onClose={() => setShowPengaturan(false)} />
+          </div>
+        </>
       )}
 
     </div>

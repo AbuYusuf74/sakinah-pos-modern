@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function Pengaturan() {
+function Pengaturan({ onClose }) {
   const [form, setForm] = useState({
     nama_toko: "",
     alamat: "",
@@ -13,8 +13,11 @@ function Pengaturan() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // ambil data awal
+  // =========================
+  // LOAD DATA
+  // =========================
   useEffect(() => {
     const fetchData = async () => {
       const { data, error } = await supabase
@@ -31,7 +34,9 @@ function Pengaturan() {
     fetchData();
   }, []);
 
-  // handle input
+  // =========================
+  // INPUT
+  // =========================
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -39,12 +44,14 @@ function Pengaturan() {
     });
   };
 
-  // upload logo
+  // =========================
+  // UPLOAD LOGO
+  // =========================
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setLoading(true);
+    setUploading(true);
 
     const fileName = `logo-${Date.now()}`;
 
@@ -53,8 +60,8 @@ function Pengaturan() {
       .upload(fileName, file);
 
     if (error) {
-      alert("Upload gagal");
-      setLoading(false);
+      alert("❌ Upload gagal");
+      setUploading(false);
       return;
     }
 
@@ -67,10 +74,12 @@ function Pengaturan() {
       logo_url: data.publicUrl,
     });
 
-    setLoading(false);
+    setUploading(false);
   };
 
-  // simpan
+  // =========================
+  // SAVE
+  // =========================
   const handleSave = async () => {
     setLoading(true);
 
@@ -85,20 +94,37 @@ function Pengaturan() {
       alert("❌ Gagal simpan");
     } else {
       alert("✅ Berhasil disimpan");
+      onClose();
     }
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
-    <div className="max-w-xl mx-auto p-4 space-y-3 pb-32">
+    <div className="bg-white rounded-t-2xl p-4 space-y-3 max-h-[90vh] overflow-y-auto shadow-2xl">
 
-      <h2 className="text-xl font-bold">⚙️ Pengaturan Toko</h2>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-bold text-gray-800">
+          ⚙️ Pengaturan Toko
+        </h2>
 
+        <button
+          onClick={onClose}
+          className="text-gray-500 text-xl"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* INPUT */}
       <input
         name="nama_toko"
         value={form.nama_toko}
         onChange={handleChange}
         placeholder="Nama Toko"
-        className="w-full border p-2 rounded"
+        className="w-full border p-3 rounded-lg"
       />
 
       <textarea
@@ -106,7 +132,7 @@ function Pengaturan() {
         value={form.alamat}
         onChange={handleChange}
         placeholder="Alamat"
-        className="w-full border p-2 rounded"
+        className="w-full border p-3 rounded-lg"
       />
 
       <input
@@ -114,25 +140,44 @@ function Pengaturan() {
         value={form.no_hp}
         onChange={handleChange}
         placeholder="Nomor HP"
-        className="w-full border p-2 rounded"
+        className="w-full border p-3 rounded-lg"
       />
 
+      {/* LOGO */}
       <div>
-        <label className="text-sm">Upload Logo</label>
-        <input type="file" onChange={handleUpload} />
+        <label className="text-sm text-gray-600">
+          Logo Toko
+        </label>
+
+        <input
+          type="file"
+          onChange={handleUpload}
+          className="mt-1"
+        />
+
+        {uploading && (
+          <div className="text-sm text-blue-500">
+            Uploading...
+          </div>
+        )}
+
         {form.logo_url && (
-          <img src={form.logo_url} className="h-16 mt-2" />
+          <img
+            src={form.logo_url}
+            className="h-16 mt-2 rounded"
+          />
         )}
       </div>
 
       <hr />
 
+      {/* FOOTER */}
       <input
         name="footer1"
         value={form.footer1}
         onChange={handleChange}
         placeholder="Footer 1"
-        className="w-full border p-2 rounded"
+        className="w-full border p-3 rounded-lg"
       />
 
       <input
@@ -140,7 +185,7 @@ function Pengaturan() {
         value={form.footer2}
         onChange={handleChange}
         placeholder="Footer 2"
-        className="w-full border p-2 rounded"
+        className="w-full border p-3 rounded-lg"
       />
 
       <input
@@ -148,23 +193,17 @@ function Pengaturan() {
         value={form.footer3}
         onChange={handleChange}
         placeholder="Footer 3"
-        className="w-full border p-2 rounded"
+        className="w-full border p-3 rounded-lg"
       />
 
+      {/* ACTION */}
       <button
         onClick={handleSave}
         disabled={loading}
-        className="w-full bg-green-600 text-white py-3 rounded-xl"
+        className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl mt-3"
       >
-        {loading ? "Menyimpan..." : "Simpan"}
+        {loading ? "Menyimpan..." : "💾 Simpan"}
       </button>
-
-      <button
-        onClick={() => setPage("barang")}
-        className="mb-3 bg-gray-300 px-3 py-2 rounded"
-      >
-        ← Kembali
-      </button>      
 
     </div>
   );
