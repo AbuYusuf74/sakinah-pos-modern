@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function Barang() {
-  const [data, setData] = useState([]);
+function Barang({ cart, setCart, mode, setMode, setPage }) {
   const [search, setSearch] = useState("");
+  const [data, setData] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
   const [form, setForm] = useState({
@@ -36,6 +36,41 @@ function Barang() {
     item.nama.toLowerCase().includes(search.toLowerCase())
   );
 
+  // =========================
+  // CART
+  // =========================
+  const handleAddToCart = (item) => {
+    const existing = cart.find((i) => i.id === item.id);
+
+    if (existing) {
+      setCart(
+        cart.map((i) =>
+          i.id === item.id
+            ? { ...i, qty: (i.qty || 1) + 1 }
+            : i
+        )
+      );
+    } else {
+      setCart([...cart, { ...item, qty: 1 }]);
+    }
+  };
+
+  const totalQty = cart.reduce(
+    (sum, item) => sum + (item.qty || 1),
+    0
+  );
+
+  const totalHarga = cart.reduce(
+    (sum, item) =>
+      sum +
+      (item.qty || 1) *
+        (mode === "jual" ? item.hargajual : item.hargabeli),
+    0
+  );
+
+  // =========================
+  // FORM
+  // =========================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -111,23 +146,26 @@ function Barang() {
     });
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
-    <div className="space-y-4 max-w-xl mx-auto pb-40">
+    <div className="space-y-4 max-w-xl mx-auto pb-32">
 
       <h2 className="text-xl font-bold">📦 Data Barang</h2>
 
-      {/* 🔍 SEARCH */}
+      {/* SEARCH */}
       <input
         placeholder="Cari barang..."
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
-          setShowForm(false); // auto hide form
+          setShowForm(false);
         }}
         className="w-full border p-3 rounded-xl text-lg shadow-sm"
       />
 
-      {/* ➕ TOMBOL TAMBAH */}
+      {/* TAMBAH */}
       <button
         onClick={() => {
           resetForm();
@@ -138,94 +176,88 @@ function Barang() {
         ➕ Tambah Barang
       </button>
 
-      {/* 📱 LIST */}
+      {/* MODE */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setMode("jual")}
+          className={`flex-1 py-2 rounded ${
+            mode === "jual"
+              ? "bg-green-600 text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          JUAL
+        </button>
+
+        <button
+          onClick={() => setMode("beli")}
+          className={`flex-1 py-2 rounded ${
+            mode === "beli"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          BELI
+        </button>
+      </div>
+
+      {/* LIST */}
       <div className="space-y-3">
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="bg-white p-4 rounded-xl shadow flex flex-col gap-2"
+            onClick={() => handleAddToCart(item)}
+            className="bg-white p-4 rounded-xl shadow flex flex-col gap-2 cursor-pointer active:scale-95"
           >
-            <div className="text-lg font-semibold">{item.nama}</div>
+            <div className="font-semibold">{item.nama}</div>
 
             <div className="text-sm text-gray-500">
               {item.satuan} • {item.barcode}
             </div>
 
             <div className="flex justify-between text-sm">
-              <div>
-                Rp {formatRupiah(item.hargabeli)}
-              </div>
+              <div>Rp {formatRupiah(item.hargabeli)}</div>
               <div className="text-green-600 font-bold">
                 Rp {formatRupiah(item.hargajual)}
               </div>
             </div>
 
+            {/* AKSI */}
             <div className="flex gap-2 pt-2">
               <button
-                onClick={() => handleEdit(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(item);
+                }}
                 className="flex-1 bg-yellow-500 text-white py-2 rounded-lg"
               >
                 ✏️ Edit
               </button>
 
               <button
-                onClick={() => handleDelete(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(item);
+                }}
                 className="flex-1 bg-red-600 text-white py-2 rounded-lg"
               >
                 🗑️ Hapus
               </button>
             </div>
+
           </div>
         ))}
       </div>
 
-      {/* 🧾 FORM (FOOTER) */}
+      {/* FORM */}
       {showForm && (
         <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-2xl border-t">
           <form onSubmit={handleSubmit} className="space-y-2">
-
-            <input
-              name="barcode"
-              placeholder="Barcode"
-              value={form.barcode}
-              onChange={handleChange}
-              className="w-full border p-3 rounded-lg"
-              autoFocus
-            />
-
-            <input
-              name="nama"
-              placeholder="Nama Barang"
-              value={form.nama}
-              onChange={handleChange}
-              className="w-full border p-3 rounded-lg"
-            />
-
-            <input
-              name="satuan"
-              placeholder="Satuan"
-              value={form.satuan}
-              onChange={handleChange}
-              className="w-full border p-3 rounded-lg"
-            />
-
-            <input
-              name="hargabeli"
-              type="number"
-              placeholder="Harga Beli"
-              value={form.hargabeli}
-              onChange={handleChange}
-              className="w-full border p-3 rounded-lg"
-            />
-
-            <input
-              name="hargajual"
-              type="number"
-              placeholder="Harga Jual"
-              value={form.hargajual}
-              onChange={handleChange}
-              className="w-full border p-3 rounded-lg"
-            />
+            <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="Barcode" className="w-full border p-3 rounded-lg" />
+            <input name="nama" value={form.nama} onChange={handleChange} placeholder="Nama Barang" className="w-full border p-3 rounded-lg" />
+            <input name="satuan" value={form.satuan} onChange={handleChange} placeholder="Satuan" className="w-full border p-3 rounded-lg" />
+            <input name="hargabeli" type="number" value={form.hargabeli} onChange={handleChange} placeholder="Harga Beli" className="w-full border p-3 rounded-lg" />
+            <input name="hargajual" type="number" value={form.hargajual} onChange={handleChange} placeholder="Harga Jual" className="w-full border p-3 rounded-lg" />
 
             <div className="flex gap-2">
               <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
@@ -243,6 +275,25 @@ function Barang() {
           </form>
         </div>
       )}
+
+      {/* BOTTOM CART */}
+      {totalQty > 0 && (
+        <div
+          onClick={() => setPage("transaksi")}
+          className={`fixed bottom-0 left-0 right-0 p-4 flex justify-between items-center shadow-xl cursor-pointer
+            ${mode === "jual" ? "bg-green-600" : "bg-blue-600"} text-white`}
+        >
+          <div>
+            🛒 {totalQty} item
+            <div className="text-xs">Mode: {mode.toUpperCase()}</div>
+          </div>
+
+          <div className="font-bold">
+            Rp {formatRupiah(totalHarga)}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

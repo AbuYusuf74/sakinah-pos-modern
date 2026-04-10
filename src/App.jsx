@@ -1,64 +1,44 @@
 import { useState } from "react";
-import Sidebar from "./components/Sidebar";
 import Barang from "./pages/Barang";
+import Transaksi from "./pages/Transaksi";
+import Pengaturan from "./pages/Pengaturan";
 
-export default function App() {
-  const [page, setPage] = useState("dashboard");
-  const [openSidebar, setOpenSidebar] = useState(false);
+function App() {
+  const [page, setPage] = useState("barang");
+  const [cart, setCart] = useState([]);
+  const [mode, setMode] = useState("jual");
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col md:flex-row">
-      {/* SIDEBAR DESKTOP */}
-      <div className="hidden md:block">
-        <Sidebar setPage={setPage} page={page} />
-      </div>
+    <div className="min-h-screen bg-gray-100">
 
-      {/* SIDEBAR MOBILE (DRAWER) */}
-      {openSidebar && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* overlay */}
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setOpenSidebar(false)}
-          />
-
-          {/* drawer */}
-          <div className="w-64 bg-gray-800">
-            <Sidebar
-              setPage={(p) => {
-                setPage(p);
-                setOpenSidebar(false); // otomatis tutup setelah klik
-              }}
-              page={page}
-            />
-          </div>
-        </div>
+      {page === "barang" && (
+        <Barang
+          cart={cart}
+          setCart={setCart}
+          mode={mode}
+          setMode={setMode}
+          setPage={setPage}
+        />
       )}
 
-      {/* CONTENT */}
-      <div className="flex-1 flex flex-col">
-        {/* HEADER */}
-        <div className="h-14 bg-white shadow flex items-center justify-between px-4">
-          {/* tombol hamburger */}
-          <button
-            className="md:hidden text-2xl"
-            onClick={() => setOpenSidebar(true)}
-          >
-            ☰
-          </button>
+      {page === "transaksi" && (
+        <Transaksi
+          cart={cart}
+          setCart={setCart}
+          mode={mode}
+          onBack={() => setPage("barang")}
+          onSelesai={() => setCart([])}
+          setMode={setMode}
+          setPage={setPage}
+        />
+      )}
 
-          <h1 className="font-semibold">
-            Sakinah POS - {page.toUpperCase()}
-          </h1>
-        </div>
+      {page === "pengaturan" && (
+        <Pengaturan setPage={setPage} />
+      )}
 
-        {/* CONTENT */}
-        <div className="flex-1 p-4 overflow-auto">
-          {page === "dashboard" && <h2>Dashboard</h2>}
-          {page === "barang" && <Barang />}
-          {page === "transaksi" && <h2>Halaman Transaksi</h2>}
-        </div>
-      </div>
     </div>
   );
 }
+
+export default App;
